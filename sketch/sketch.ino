@@ -1,14 +1,25 @@
-int redLed = 2;
+//Porta 2 não deve ser variável, correção para definir valor fixo de redLed
+//int redLed = 2;
+#define REDLED 2
+#define SEC_1 1000
+#define SEC_05 500
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(redLed, OUTPUT);
+  Serial.begin(9600);
+  pinMode(REDLED, OUTPUT);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  digitalWrite(redLed, HIGH);
-  delay(1000);
-  digitalWrite(redLed, LOW);
-  delay(500);
+  Serial.println(REDLED);
+  blink(REDLED);
+  //redLed++;
+}
+
+void blink(int ledPort){
+  digitalWrite(ledPort, HIGH);
+  delay(SEC_1);
+  digitalWrite(ledPort, LOW);
+  delay(SEC_05);
 }
