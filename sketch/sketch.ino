@@ -14,20 +14,35 @@
 
 #define SEQUENCE_SIZE 4
 
+enum States{
+  READY_FOR_NEXT_ROUND,
+  USER_INTERACT,
+  GAME_OVER_SUCCESS,
+  GAME_OVER_FAIL
+};
+
 int lightSequence[SEQUENCE_SIZE];
 
+int gameRound = 0;
+
+int buttonPress = 0;
+
 void setup() {
-  
   Serial.begin(9600);
   portConfig();
   gameStart();
 }
 
 void gameStart(){
-  lightSequence[0] = BLUELED;
-  lightSequence[1] = GREENLED;
-  lightSequence[2] = REDLED;
-  lightSequence[3] = YELLOWLED;
+  int randomNumberGenerator = analogRead(0);
+  randomSeed(randomNumberGenerator);
+  for(int index = 0; index < SEQUENCE_SIZE; index++){
+    lightSequence[index] = collordraw();
+  }
+}
+
+int collordraw(){
+  return random(GREENLED,BLUELED + 1);
 }
 
 void portConfig(){
@@ -44,10 +59,63 @@ void portConfig(){
 }
 
 void loop() {
-  for(int index = 0; index < SEQUENCE_SIZE; index++){
+  switch(actualState()){
+    case READY_FOR_NEXT_ROUND:
+      prepareNextRound();
+      break;
+    case USER_INTERACT:
+      userInputChecker();
+      break;
+    case GAME_OVER_SUCCESS:
+      gameOverSuccess();
+      break;
+    case GAME_OVER_FAIL:
+      gameOverFail();
+      break;
+  }
+  delay(500);
+}
+
+void userInputChecker(){
+  int response = buttonPressedCheck();
+
+  if (response == UNDEFINED){
+    return;
+  }
+
+  if (response == lightSequence[buttonPress]){
+    buttonPress++;
+  } else {
+    gameRound = SEQUENCE_SIZE + 2;
+  }
+}
+
+void prepareNextRound(){
+  gameRound++;
+  buttonPress = 0;
+  if(gameRound <= SEQUENCE_SIZE){
+    playround();
+  }
+}
+
+int actualState(){
+  if(gameRound <= SEQUENCE_SIZE){
+    if(buttonPress == gameRound){
+      return READY_FOR_NEXT_ROUND;
+    } else {
+      return USER_INTERACT;
+    }
+  } else if(gameRound == SEQUENCE_SIZE + 1){
+    return GAME_OVER_SUCCESS;
+  } else {
+    return GAME_OVER_FAIL;
+  }
+}
+
+void playround(){
+    for(int index = 0; index < gameRound; index++){
     blink(lightSequence[index]);
   }
-  Serial.println(buttonPressedCheck());
 }
 
 int buttonPressedCheck(){
@@ -66,7 +134,7 @@ int buttonPressedCheck(){
   return UNDEFINED;
 }
 
-void testSequence1(){
+void gameOverSuccess(){
   blink(GREENLED);
   blink(YELLOWLED);
   blink(REDLED);
@@ -74,10 +142,23 @@ void testSequence1(){
   delay(SEC_05);
 }
 
+void gameOverFail(){
+  digitalWrite(GREENLED, HIGH);
+  digitalWrite(YELLOWLED, HIGH);
+  digitalWrite(REDLED, HIGH);
+  digitalWrite(BLUELED, HIGH);
+  delay(1000);
+  digitalWrite(GREENLED, LOW);
+  digitalWrite(YELLOWLED, LOW);
+  digitalWrite(REDLED, LOW);
+  digitalWrite(BLUELED, LOW);
+  delay(500);
+}
+
 int blink(int ledPort){
   digitalWrite(ledPort, HIGH);
   delay(SEC_1);
   digitalWrite(ledPort, LOW);
   delay(SEC_05);
-  return ledPort
+  return ledPort;
 }
